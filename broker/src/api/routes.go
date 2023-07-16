@@ -24,5 +24,7 @@ func (app *Config) setRoutes() http.Handler {
 
 	mux.Post("/", app.Broker)
 
+	mux.Post("/handle", app.HandleSubmission)
+
 	return mux
 }
