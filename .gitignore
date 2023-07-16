@@ -32,6 +32,8 @@ go.work
 *.code-workspace
 .DS_Store
 
+project/db-data/
+
 ### VisualStudioCode Patch ###
 # Ignore all local history of files
 .history
