@@ -26,6 +26,8 @@ type Config struct {
 }
 
 func main() {
+	log.Println("Starting logger service")
+
 	mongoClient, err := connectToMongo()
 	if err != nil {
 		log.Panic(err)
