@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/matheus-vb/microservices-go/logger-service/data"
@@ -24,6 +25,8 @@ func (app *Config) WriteLog(w http.ResponseWriter, r *http.Request) {
 		Data: requestPayload.Data,
 		Name: requestPayload.Name,
 	}
+
+	log.Printf("Logging %s...\n", requestPayload.Name)
 
 	err = app.Models.LogEntry.Insert(event)
 	if err != nil {
