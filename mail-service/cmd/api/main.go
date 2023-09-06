@@ -40,7 +40,7 @@ func setupMail() Mail {
 
 	mail := Mail{
 		Domain:      os.Getenv("MAIL_DOMAIN"),
-		Host:        os.Getenv("HOST"),
+		Host:        os.Getenv("MAIL_HOST"),
 		Port:        port,
 		Username:    os.Getenv("MAIL_USERNAME"),
 		Password:    os.Getenv("MAIL_PASSWORD"),
