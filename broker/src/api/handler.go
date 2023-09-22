@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"net/rpc"
 
 	"github.com/matheus-vb/microservices-go/broker/event"
 )
@@ -32,6 +33,11 @@ type AuthPayload struct {
 type LogPayload struct {
 	Name string `json:"name"`
 	Data string `json:"data"`
+}
+
+type RPCPayload struct {
+	Name string
+	Data string
 }
 
 func (app *Config) Broker(w http.ResponseWriter, r *http.Request) {
@@ -61,7 +67,7 @@ func (app *Config) HandleSubmission(w http.ResponseWriter, r *http.Request) {
 	case "mail":
 		app.sendMail(w, requestPayload.Mail)
 	case "log":
-		app.logRabbitEvent(w, requestPayload.Log)
+		app.logItemRPC(w, requestPayload.Log)
 	default:
 		app.errorJSON(w, errors.New("unknown action"), http.StatusBadRequest)
 	}
@@ -227,4 +233,28 @@ func (app *Config) pushToQeue(name string, msg string) error {
 	}
 
 	return nil
+}
+
+func (app *Config) logItemRPC(w http.ResponseWriter, l LogPayload) {
+	client, err := rpc.Dial("tcp", "logger-service:5001")
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
+
+	rpcPayload := RPCPayload(l)
+
+	var result string
+
+	err = client.Call("RPCServer.LogInfo", rpcPayload, &result)
+	if err != nil {
+		app.errorJSON(w, err)
+	}
+
+	payload := jsonResponse{
+		Error:   false,
+		Message: result,
+	}
+
+	app.writeJSON(w, http.StatusAccepted, payload)
 }
