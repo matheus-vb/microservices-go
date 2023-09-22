@@ -6,6 +6,8 @@ import (
 	"errors"
 	"log"
 	"net/http"
+
+	"github.com/matheus-vb/microservices-go/broker/event"
 )
 
 type RequestPayload struct {
@@ -59,7 +61,7 @@ func (app *Config) HandleSubmission(w http.ResponseWriter, r *http.Request) {
 	case "mail":
 		app.sendMail(w, requestPayload.Mail)
 	case "log":
-		app.logItem(w, requestPayload.Log)
+		app.logRabbitEvent(w, requestPayload.Log)
 	default:
 		app.errorJSON(w, errors.New("unknown action"), http.StatusBadRequest)
 	}
@@ -189,4 +191,40 @@ func (app *Config) sendMail(w http.ResponseWriter, msg MailPayload) {
 	}
 
 	app.writeJSON(w, http.StatusAccepted, payload)
+}
+
+func (app *Config) logRabbitEvent(w http.ResponseWriter, l LogPayload) {
+	err := app.pushToQeue(l.Name, l.Data)
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
+
+	payload := jsonResponse{
+		Error:   false,
+		Message: "logged with RabbitMQ",
+	}
+
+	app.writeJSON(w, http.StatusAccepted, payload)
+}
+
+func (app *Config) pushToQeue(name string, msg string) error {
+	emitter, err := event.NewEventEmitter(app.Rabbit)
+	if err != nil {
+		return err
+	}
+
+	payload := LogPayload{
+		Name: name,
+		Data: msg,
+	}
+
+	jsonData, _ := json.MarshalIndent(&payload, "", "\t")
+
+	err = emitter.PushEvent(string(jsonData), "log.INFO")
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
